@@ -10,7 +10,9 @@ OBJCPP += obj/main.o
 SOURCESC := $(call rwildcard,src,*.c)
 OBJC := $(SOURCESC:src/%.c=obj/%.o)
 
-CFLAGS = -g -Wall -Ofast
+CFLAGS = -O3 -Wall -Iinclude
+
+EXE = mosaic
 
 obj/%.o: src/%.cpp
 	g++ -c -g src/$*.cpp -o obj/$*.o $(CFLAGS)
@@ -22,7 +24,7 @@ obj/main.o: main.cpp
 	g++ -c -g main.cpp -o obj/main.o $(CFLAGS)
 
 main: $(OBJCPP) $(OBJC)
-	g++ $(OBJCPP) $(OBJC) -o main $(CFLAGS)
+	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
 
 clean:
 	rm -f obj/*.o main
