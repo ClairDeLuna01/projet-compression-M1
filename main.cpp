@@ -1,13 +1,15 @@
 #include <iostream>
 #include <string>
-#include "Dataset.hpp"
-#include "Image.hpp"
 
-#include <Utils.hpp>
 
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 #include <stb/stb_image_resize.h>
+
+#include "Utils.hpp"
+#include "Dataset.hpp"
+#include "Image.hpp"
+#include "MosaicGenerator.hpp"
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -46,25 +48,16 @@ int main(int argc, const char *argv[])
     *******/
     // const char* inputFile = "data/in/cat-hres.png";
     const char* inputFile = argv[1];
-    const char* technique = "AVG_RGB";
+    const char* technique = "DIFF_RGB";
 
     std::vector<const char *> dataFiles =
     {
-        // "data/in/data_batch_1.bin",
-        // "data/in/data_batch_2.bin",
-        // "data/in/data_batch_3.bin",
-        // "data/in/data_batch_4.bin",
-        // "data/in/data_batch_5.bin"
-
-        // "data/in/dataSets/data_batch.CIFAR-10",
-        // "data/in/dataSets/data_batch.CIFAR-100"
-
         "data/in/dataSets/part1.CIFAR-10",
         "data/in/dataSets/part2.CIFAR-10",
     };
  
     int res = 0;
-
+ 
     if(argc >= 3)
         sscanf(argv[2], "%d", &res);
 
@@ -73,6 +66,49 @@ int main(int argc, const char *argv[])
     if(res) input.resizeForMinSubImageRes(res);
     Dataset img(input);
 
+    std::function<int(subImage &a, subImage &b, const int &scoreClosest)> diff = 
+    [](subImage &a, subImage &b, const int &scoreClosest) -> int{
+        int score = 0;
+        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+            score += a.r.data[i] > b.r.data[i] ? a.r.data[i] - b.r.data[i] : b.r.data[i] - a.r.data[i];
+
+        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+            score += a.g.data[i] > b.g.data[i] ? a.g.data[i] - b.g.data[i] : b.g.data[i] - a.g.data[i];
+
+        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+            score += a.b.data[i] > b.b.data[i] ? a.b.data[i] - b.b.data[i] : b.b.data[i] - a.b.data[i];
+        
+        return score;
+    }; 
+
+    MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 8); 
+    
+    // );
+
+    // const int size = (int)img.size();
+    // const int dSize = (int)dat.size();
+    // for(int i = 0; i < size; i++)
+    // {
+    //     int idClosest = 0;
+    //     uint32 scoreClosest = 1e6;
+
+    //     for(int j = 0; j < dSize; j++)
+    //     {
+    //         uint32 score = (dat[j].r - img[i].r) + (dat[j].g - img[i].g) + (dat[j].b - img[i].b);
+
+    //         if(score < scoreClosest)
+    //         {
+    //             scoreClosest = score;
+    //             idClosest = j;
+    //         }
+    //     }
+
+    //     img[i] = dat[idClosest];
+    //     std::cout << i << "\n";
+    // }
+
+    /* AVG
+    technique = "AVG_RGB"
     std::function<vec3(const DataElem &)> avgF = [](const DataElem &e)
     {
         vec3 avg;
@@ -80,9 +116,6 @@ int main(int argc, const char *argv[])
         for(int j = 0; j < SUB_IMAGE_ROW; j++)
         {
             vec3 p(e.pixels.r[i][j], e.pixels.g[i][j], e.pixels.b[i][j]);
-
-            // p = rgb2hsv(p/255.f);
-
             avg += p;
         }
 
@@ -98,7 +131,6 @@ int main(int argc, const char *argv[])
     for(int i = 0; i < size; i++)
     {
         vec3 a = iAvg[i];
-
         int idClosest = 0;
         float scoreClosest = 1e9;
         for(int j = 0; j < dSize; j++)
@@ -112,10 +144,9 @@ int main(int argc, const char *argv[])
             }
         }
 
-        // dAvg[idClosest] = vec3(1e9);
-        
         img[i].pixels = dat[idClosest].pixels;
     }
+    */
     
 
     img.toImage()->save(composeOutputName(

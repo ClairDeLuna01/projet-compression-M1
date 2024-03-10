@@ -15,13 +15,13 @@ CFLAGS = -O3 -Wall -Iinclude
 EXE = mosaic
 
 obj/%.o: src/%.cpp
-	g++ -c -g src/$*.cpp -o obj/$*.o $(CFLAGS)
+	g++ -c src/$*.cpp -o obj/$*.o $(CFLAGS)
 
 obj/%.o: src/%.c
-	g++ -c -g src/$*.c -o obj/$*.o $(CFLAGS)
+	g++ -c src/$*.c -o obj/$*.o $(CFLAGS)
 
 obj/main.o: main.cpp
-	g++ -c -g main.cpp -o obj/main.o $(CFLAGS)
+	g++ -c main.cpp -o obj/main.o $(CFLAGS)
 
 main: $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)

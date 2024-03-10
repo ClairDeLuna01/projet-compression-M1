@@ -11,13 +11,25 @@
 #define SUB_IMAGE_ROW 32
 #define SUB_IMAGE_SIZE SUB_IMAGE_ROW*SUB_IMAGE_ROW
 
-typedef glm::vec<3, uint8[32][32], glm::packed_highp> subImage;
-
-struct DataElem
+class subImageChannel
 {
-    // char label;
-    subImage pixels;
+    private : 
 
+    public :
+
+        union
+        {
+            uint8 array[SUB_IMAGE_ROW][SUB_IMAGE_ROW];
+            uint8 data[1024];
+        };
+};
+
+uint32 operator-(const subImageChannel & __restrict__ a, const subImageChannel & __restrict__ b);
+
+typedef glm::vec<3, subImageChannel, glm::packed_highp> subImage;
+
+struct DataElem : subImage
+{
     void toImage(Image &out, ivec2 pos);
 };
 
@@ -39,6 +51,8 @@ class Dataset : public std::vector<DataElem>
         void convertSpace(std::function<pixel(pixel)> f);
 
         ivec2 getImgSize(){return imgSize;};
+
+
 };
 
 template<typename T>
