@@ -82,7 +82,7 @@ class MosaicGenerator
                 t[i] = std::thread(mosaicThread<T>, 
                 img, dat, f, 
                 &history, &historyMutex, 
-                i*size/threadNB, (i+1)*size/threadNB,
+                i*size/threadNB, (i+1)*size/threadNB-1,
                 1, maxScore);
                 
                 

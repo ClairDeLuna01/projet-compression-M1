@@ -160,11 +160,11 @@ int main(int argc, const char *argv[])
         return score.r + score.g + score.b;
     }; 
 
-    const char* technique = "LFDIFF_AVGPOND_RGB_REPRED";
-    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 15); 
+    // const char* technique = "LFDIFF_AVGPOND_RGB_REPRED";
+    // MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 1); 
 
-    // const char* technique = "DIFF_RGB_REPRED";
-    // MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 15); 
+    const char* technique = "DIFF_RGB_REPRED";
+    MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 1); 
     
 
 
