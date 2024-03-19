@@ -11,6 +11,8 @@
 #include "Image.hpp"
 #include "MosaicGenerator.hpp"
 
+#include <immintrin.h>
+
 vec3 rgb2hsv(vec3 c)
 {
     vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -48,7 +50,6 @@ int main(int argc, const char *argv[])
     *******/
     // const char* inputFile = "data/in/cat-hres.png";
     const char* inputFile = argv[1];
-    const char* technique = "DIFF_RGB";
 
     std::vector<const char *> dataFiles =
     {
@@ -66,8 +67,52 @@ int main(int argc, const char *argv[])
     if(res) input.resizeForMinSubImageRes(res);
     Dataset img(input);
 
-    std::function<int(subImage &a, subImage &b, const int &scoreClosest)> diff = 
-    [](subImage &a, subImage &b, const int &scoreClosest) -> int{
+/****** Defining dataset atributes ******/
+    std::function<vec3(const DataElem &)> avgF = [](const DataElem &e)
+    {
+        vec3 avg;
+        for(int i = 0; i < SUB_IMAGE_ROW; i++)
+        for(int j = 0; j < SUB_IMAGE_ROW; j++)
+        {
+            vec3 p(e.r.array[i][j], e.g.array[i][j], e.b.array[i][j]);
+            avg += p;
+        }
+
+        avg /= SUB_IMAGE_SIZE;
+        return avg;
+    };
+
+    static DatasetAttribute<vec3> dAvg(dat, avgF);
+    static DatasetAttribute<vec3> iAvg(img, avgF);
+
+
+    std::function<subImageQuarter(const DataElem &)> waveF = [](const DataElem &e)
+    {
+        subImageQuarter wave;
+
+        for(int c = 0; c < 3; c++)
+        for(int i = 0; i < SUB_IMAGE_ROW; i+=2)
+        for(int j = 0; j < SUB_IMAGE_ROW; j+=2)
+        {
+            float A = (float)e[c].array[i][j];
+            float B = (float)e[c].array[i+1][j];
+            float C = (float)e[c].array[i][j+1];
+            float D = (float)e[c].array[i+1][j+1];
+
+            wave.rgb[c].array[i/2][j/2] = (A+B+C+D);
+
+            // wave.rgb[c].array[i/2][j/2] = A + abs(A-B) + abs(A-C) + abs(A - D);
+        }
+
+        return wave;
+    };
+
+    static DatasetAttribute<subImageQuarter> dWave(dat, waveF);
+    static DatasetAttribute<subImageQuarter> iWave(img, waveF);
+
+/****** Defining subImage comparison techniques ******/
+    std::function<int(subImage &, subImage &, int, int,  const int &)> diff = 
+    [](subImage &a, subImage &b, int aid, int bid, const int &scoreClosest) -> int{
         int score = 0;
         for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
             score += a.r.data[i] > b.r.data[i] ? a.r.data[i] - b.r.data[i] : b.r.data[i] - a.r.data[i];
@@ -81,8 +126,48 @@ int main(int argc, const char *argv[])
         return score;
     }; 
 
-    MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 8); 
+
+    std::function<float(subImage &, subImage &, int, int, const float &)> spec = 
+    [](subImage &a, subImage &b, int aid, int bid, const float &scoreClosest) -> float{
+
+        vec3 score(0);
+        
+        for(int c = 0; c < 3 && score[c] < scoreClosest; c++)
+        {
+            __m256 _res = _mm256_set1_ps(0.f);
+            // float *aptr = iWave[aid].rgb[c].data;
+            // float *bptr = dWave[bid].rgb[c].data;
+
+            for(int i = 0; i < SUB_IMAGE_SIZE/4; i+=8)
+            {
+                __m256 _a = _mm256_loadu_ps(&iWave[aid].rgb[c].data[i]);
+                __m256 _b = _mm256_loadu_ps(&dWave[bid].rgb[c].data[i]);
+                _res = _mm256_add_ps(_res, _mm256_andnot_ps(_mm256_set1_ps(-0.f), _mm256_sub_ps(_a, _b)));
+            }
+
+            float tmp[8];
+            _mm256_storeu_ps(tmp, _res);
+            score[c] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
+        }
+
+        // score += 128.f * abs(iAvg[aid] - dAvg[bid]);
+
+        // return 1.2*score.r + 1.5*score.g + score.b;
+
+        // score *= pow(1.f/iAvg[aid], vec3(0.25));
+        score *= vec3(0.3, 0.6, 0.1) + iAvg[aid]/256.f;
+
+        return score.r + score.g + score.b;
+    }; 
+
+    const char* technique = "LFDIFF_AVGPOND_RGB_REPRED";
+    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 15); 
+
+    // const char* technique = "DIFF_RGB_REPRED";
+    // MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 15); 
     
+
+
     // );
 
     // const int size = (int)img.size();

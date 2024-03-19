@@ -1,27 +1,56 @@
 #pragma once
 
 #include <thread>
+#include <mutex>
+#include <array>
+#include <algorithm>
+#include <glm/glm.hpp>
 #include "Dataset.hpp"
 
-#define SubImageScoringFunction std::function<T(subImage &a, subImage &b, const T &scoreClosest)>
+#define SubImageScoringFunction std::function<T(subImage &a, subImage &b, int aid, int bid, const T &scoreClosest)>
 
 class MosaicGenerator 
 {
 
     private : 
         template<typename T>
-        static void mosaicThread(Dataset *img, Dataset *dat, SubImageScoringFunction f, int beg, int jump, T maxScore)
+        static void mosaicThread(
+            Dataset *img, 
+            Dataset *dat, 
+            SubImageScoringFunction f, 
+            std::vector<ivec3> *history,
+            std::vector<std::mutex> *historyMutex,
+            int beg, int end, int jump, T maxScore)
         {
-            const int size = (int)img->size();
+            // const int size = (int)img->size();
             const int dSize = (int)dat->size();
-            for(int i = beg; i < size; i += jump)
+
+            const ivec2 imgSize = img->getImgSize();
+
+            for(int i = beg; i < end; i += jump)
             {
-                int idClosest;
+                int idClosest = 0;
                 T scoreClosest = maxScore;
+
+                ivec2 imgPos(i/imgSize.x, i%imgSize.x);
 
                 for(int j = 0; j < dSize; j++)
                 {
-                    T score = f(img->at(i), dat->at(j), scoreClosest);
+                    (*historyMutex)[j].lock();
+                    if((*history)[j].z > 0)
+                    {
+                        
+                        int sdist = min(abs((*history)[j].y - imgPos.y), abs((*history)[j].x - imgPos.x));
+                        
+                        if(sdist <= 5)
+                        {
+                            (*historyMutex)[j].unlock();
+                            continue;
+                        }
+                    }
+                    (*historyMutex)[j].unlock();
+
+                    T score = f(img->at(i), dat->at(j), i, j, scoreClosest);
                     if(score < scoreClosest)
                     {
                         scoreClosest = score;
@@ -29,8 +58,11 @@ class MosaicGenerator
                     }
                 }
 
+                (*historyMutex)[idClosest].lock();
+                (*history)[idClosest] = ivec3(imgPos, (*history)[idClosest].z+1);
+                (*historyMutex)[idClosest].unlock();
+
                 img->at(i) = dat->at(idClosest);
-                // std::cout << i << "\n";
             }
         };
 
@@ -40,9 +72,21 @@ class MosaicGenerator
         static void mosaic(Dataset *img, Dataset *dat, SubImageScoringFunction f, T maxScore, int threadNB = 8)
         {
             std::thread t[threadNB];
+            const int size = (int)img->size();
+            std::vector<ivec3> history(dat->size());
+            std::vector<std::mutex> historyMutex(dat->size());
+
+            std::fill(history.begin(), history.end(), ivec3(0));
 
             for(int i = 0; i < threadNB; i++)
-                t[i] = std::thread(mosaicThread<T>, img, dat, f, i, threadNB, maxScore);
+                t[i] = std::thread(mosaicThread<T>, 
+                img, dat, f, 
+                &history, &historyMutex, 
+                i*size/threadNB, (i+1)*size/threadNB,
+                1, maxScore);
+                
+                
+                // t[i] = std::thread(mosaicThread<T>, img, dat, f, &history, &historyMutex, i, threadNB, maxScore);
             
             for(int i = 0; i < threadNB; i++)
                 t[i].join();

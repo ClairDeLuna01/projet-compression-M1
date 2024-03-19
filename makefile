@@ -10,7 +10,7 @@ OBJCPP += obj/main.o
 SOURCESC := $(call rwildcard,src,*.c)
 OBJC := $(SOURCESC:src/%.c=obj/%.o)
 
-CFLAGS = -O3 -Wall -Iinclude
+CFLAGS = -O3 -Wall -Iinclude -mavx -mavx2
 
 EXE = mosaic
 

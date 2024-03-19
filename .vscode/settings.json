@@ -52,6 +52,23 @@
         "ratio": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "*.ipp": "cpp",
+        "bitset": "cpp",
+        "valarray": "cpp",
+        "complex": "cpp",
+        "mutex": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "condition_variable": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "optional": "cpp",
+        "iomanip": "cpp",
+        "sstream": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp"
     }
 }
