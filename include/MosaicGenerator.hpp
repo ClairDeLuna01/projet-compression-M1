@@ -36,19 +36,23 @@ class MosaicGenerator
 
                 for(int j = 0; j < dSize; j++)
                 {
+                    #ifdef DO_REPETITION_REDUCTION
                     (*historyMutex)[j].lock();
                     if((*history)[j].z > 0)
                     {
                         
-                        int sdist = min(abs((*history)[j].y - imgPos.y), abs((*history)[j].x - imgPos.x));
+                        float sdisty = abs((*history)[j].y - imgPos.y);
+                        float sdistx = abs((*history)[j].x - imgPos.x);
+                        float sdist = sqrt(sdistx*sdistx + sdisty*sdisty);
                         
-                        if(sdist <= 5)
+                        if(sdist <= 25.f || sdistx <= 1.f || sdisty <= 1.f)
                         {
                             (*historyMutex)[j].unlock();
                             continue;
                         }
                     }
                     (*historyMutex)[j].unlock();
+                    #endif
 
                     T score = f(img->at(i), dat->at(j), i, j, scoreClosest);
                     if(score < scoreClosest)

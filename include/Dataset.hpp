@@ -28,8 +28,8 @@ class subImageQuarterChannel
 
         union
         {
-            float array[SUB_IMAGE_ROW/2][SUB_IMAGE_ROW/2];
-            float data[SUB_IMAGE_SIZE/4];
+            float array[SUB_IMAGE_ROW/4][SUB_IMAGE_ROW/4];
+            float data[SUB_IMAGE_SIZE/16];
         };
 };
 
