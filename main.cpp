@@ -1,10 +1,9 @@
 #include <iostream>
 #include <string>
 
-
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
-#include <stb/stb_image_resize.h>
+#include <stb/stb_image_resize2.h>
 
 #define DO_REPETITION_REDUCTION
 
@@ -29,56 +28,63 @@ vec3 rgb2hsv(vec3 c)
 int main(int argc, const char *argv[])
 {
 
-    /******* Saving a n*n mosaic of the first element in the dataset 
+    /******* Saving a n*n mosaic of the first element in the dataset
     {
         const int mosaicSize = 100;
         Dataset data("data/in/data_batch_1.bin");
 
         Image img;
         img.alloc(ivec2(mosaicSize*32));
-        
+
         for(int i = 0; i < mosaicSize; i++)
         for(int j = 0; j < mosaicSize; j++)
-            data[i*mosaicSize + j].toImage(img, ivec2(i, j)); 
-        
+            data[i*mosaicSize + j].toImage(img, ivec2(i, j));
+
         img.save("data/out/test4.png");
     }
     *******/
 
-    /******* Converting an Image to Dataset then back to Image 
+    /******* Converting an Image to Dataset then back to Image
     {
         Dataset(Image("data/in/gradient.png")).toImage()->save("data/out/gradientReConverted.png");
     }
     *******/
     // const char* inputFile = "data/in/cat-hres.png";
-    const char* inputFile = argv[1];
+    if (argc < 2)
+    {
+        std::cout << "Usage: " << argv[0] << " <inputFile> [res]\n";
+        return EXIT_FAILURE;
+    }
+
+    const char *inputFile = argv[1];
 
     std::vector<const char *> dataFiles =
-    {
-        "data/in/dataSets/part1.CIFAR-10",
-        "data/in/dataSets/part2.CIFAR-10",
-    };
- 
+        {
+            "data/in/dataSets/part1.CIFAR-10",
+            "data/in/dataSets/part2.CIFAR-10",
+        };
+
     int res = 0;
- 
-    if(argc >= 3)
+
+    if (argc >= 3)
         sscanf(argv[2], "%d", &res);
 
     Dataset dat(dataFiles);
     Image input(inputFile);
-    if(res) input.resizeForMinSubImageRes(res);
+    if (res)
+        input.resizeForMinSubImageRes(res);
     Dataset img(input);
 
-/****** Defining dataset atributes ******/
+    /****** Defining dataset atributes ******/
     std::function<vec3(const DataElem &)> avgF = [](const DataElem &e)
     {
         vec3 avg;
-        for(int i = 0; i < SUB_IMAGE_ROW; i++)
-        for(int j = 0; j < SUB_IMAGE_ROW; j++)
-        {
-            vec3 p(e.r.array[i][j], e.g.array[i][j], e.b.array[i][j]);
-            avg += p;
-        }
+        for (int i = 0; i < SUB_IMAGE_ROW; i++)
+            for (int j = 0; j < SUB_IMAGE_ROW; j++)
+            {
+                vec3 p(e.r.array[i][j], e.g.array[i][j], e.b.array[i][j]);
+                avg += p;
+            }
 
         avg /= SUB_IMAGE_SIZE;
         return avg;
@@ -87,37 +93,35 @@ int main(int argc, const char *argv[])
     static DatasetAttribute<vec3> dAvg(dat, avgF);
     static DatasetAttribute<vec3> iAvg(img, avgF);
 
-
     std::function<subImageQuarter(const DataElem &)> waveF = [](const DataElem &e)
     {
         subImageQuarter wave;
 
-        float array[3][SUB_IMAGE_ROW/2][SUB_IMAGE_ROW/2];
+        float array[3][SUB_IMAGE_ROW / 2][SUB_IMAGE_ROW / 2];
 
-        for(int c = 0; c < 3; c++)
-        for(int i = 0; i < SUB_IMAGE_ROW; i+=2)
-        for(int j = 0; j < SUB_IMAGE_ROW; j+=2)
-        {
-            float A = (float)e[c].array[i][j];
-            float B = (float)e[c].array[i+1][j];
-            float C = (float)e[c].array[i][j+1];
-            float D = (float)e[c].array[i+1][j+1];
+        for (int c = 0; c < 3; c++)
+            for (int i = 0; i < SUB_IMAGE_ROW; i += 2)
+                for (int j = 0; j < SUB_IMAGE_ROW; j += 2)
+                {
+                    float A = (float)e[c].array[i][j];
+                    float B = (float)e[c].array[i + 1][j];
+                    float C = (float)e[c].array[i][j + 1];
+                    float D = (float)e[c].array[i + 1][j + 1];
 
-            // wave.rgb[c].array[i/2][j/2] = (A+B+C+D);
-            array[c][i/2][j/2] = (A+B+C+D);
-        }
+                    // wave.rgb[c].array[i/2][j/2] = (A+B+C+D);
+                    array[c][i / 2][j / 2] = (A + B + C + D);
+                }
 
-        for(int c = 0; c < 3; c++)
-        for(int i = 0; i < SUB_IMAGE_ROW/2; i+=2)
-        for(int j = 0; j < SUB_IMAGE_ROW/2; j+=2)
-        {
-            float A = array[c][i][j];
-            float B = array[c][i+1][j];
-            float C = array[c][i][j+1];
-            float D = array[c][i+1][j+1];
-            wave.rgb[c].array[i/2][j/2] = (A+B+C+D);
-        }
-
+        for (int c = 0; c < 3; c++)
+            for (int i = 0; i < SUB_IMAGE_ROW / 2; i += 2)
+                for (int j = 0; j < SUB_IMAGE_ROW / 2; j += 2)
+                {
+                    float A = array[c][i][j];
+                    float B = array[c][i + 1][j];
+                    float C = array[c][i][j + 1];
+                    float D = array[c][i + 1][j + 1];
+                    wave.rgb[c].array[i / 2][j / 2] = (A + B + C + D);
+                }
 
         return wave;
     };
@@ -125,67 +129,66 @@ int main(int argc, const char *argv[])
     static DatasetAttribute<subImageQuarter> dWave(dat, waveF);
     static DatasetAttribute<subImageQuarter> iWave(img, waveF);
 
-/****** Defining subImage comparison techniques ******/
-    std::function<int(subImage &, subImage &, int, int,  const int &)> diff = 
-    [](subImage &a, subImage &b, int aid, int bid, const int &scoreClosest) -> int{
+    /****** Defining subImage comparison techniques ******/
+    std::function<int(subImage &, subImage &, int, int, const int &)> diff =
+        [](subImage &a, subImage &b, int aid, int bid, const int &scoreClosest) -> int
+    {
         int score = 0;
-        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+        for (int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
             score += a.r.data[i] > b.r.data[i] ? a.r.data[i] - b.r.data[i] : b.r.data[i] - a.r.data[i];
 
-        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+        for (int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
             score += a.g.data[i] > b.g.data[i] ? a.g.data[i] - b.g.data[i] : b.g.data[i] - a.g.data[i];
 
-        for(int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
+        for (int i = 0; i < SUB_IMAGE_SIZE && score < scoreClosest; i++)
             score += a.b.data[i] > b.b.data[i] ? a.b.data[i] - b.b.data[i] : b.b.data[i] - a.b.data[i];
-        
+
         return score;
-    }; 
+    };
 
-
-    std::function<float(subImage &, subImage &, int, int, const float &)> spec = 
-    [](subImage &a, subImage &b, int aid, int bid, const float &scoreClosest) -> float{
-
+    std::function<float(subImage &, subImage &, int, int, const float &)> spec =
+        [](subImage &a, subImage &b, int aid, int bid, const float &scoreClosest) -> float
+    {
         vec3 score(0);
-        
-        for(int c = 0; c < 3 && score[c] < scoreClosest; c++)
+
+        for (int c = 0; c < 3 && score[c] < scoreClosest; c++)
         {
             __m256 _res = _mm256_set1_ps(0.f);
             // float *aptr = iWave[aid].rgb[c].data;
             // float *bptr = dWave[bid].rgb[c].data;
 
-            for(int i = 0; i < SUB_IMAGE_SIZE/16; i+=8)
+            for (int i = 0; i < SUB_IMAGE_SIZE / 16; i += 8)
             {
                 __m256 _a = _mm256_loadu_ps(&iWave[aid].rgb[c].data[i]);
                 __m256 _b = _mm256_loadu_ps(&dWave[bid].rgb[c].data[i]);
                 _res = _mm256_add_ps(_res, _mm256_andnot_ps(_mm256_set1_ps(-0.f), _mm256_sub_ps(_a, _b)));
-            } 
+            }
 
             float tmp[8];
             _mm256_storeu_ps(tmp, _res);
             score[c] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
         }
 
-
         // score *= vec3(0.3, 0.6, 0.1) + iAvg[aid]/128.f;
         // score *= vec3(0.3, 0.6, 0.1);
 
         return score.r + score.g + score.b;
-    }; 
+    };
 
     // std::string technique = "LLFDIFF_AVGPOND_RGB";
     std::string technique = "LLFDIFF_RGB";
-    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 1); 
+    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 8);
 
     // std::string technique = "DIFF_RGB";
-    // MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 4); 
-    
-    #ifdef DO_REPETITION_REDUCTION
+    // MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 4);
+
+#ifdef DO_REPETITION_REDUCTION
     technique += "_REPRED";
-    #endif
+#endif
 
     img.toImage()->save(composeOutputName(
-        inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str()
-    ).c_str());
+                            inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
+                            .c_str());
 
     std::cout << "Done!\n";
     return EXIT_SUCCESS;

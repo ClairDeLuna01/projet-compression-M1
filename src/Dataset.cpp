@@ -8,28 +8,36 @@ void DataElem::toImage(Image &out, ivec2 pos)
 {
     pos *= SUB_IMAGE_ROW;
 
-    for(int i = 0; i < SUB_IMAGE_ROW; i++)
-    for(int j = 0; j < SUB_IMAGE_ROW; j++)
-    {
-        out(i+pos.x, j+pos.y) = pixel(
-            r.array[j][i], g.array[j][i], b.array[j][i]
-        );
-    }
+    for (int i = 0; i < SUB_IMAGE_ROW; i++)
+        for (int j = 0; j < SUB_IMAGE_ROW; j++)
+        {
+            out(i + pos.x, j + pos.y) = pixel(
+                r.array[j][i], g.array[j][i], b.array[j][i]);
+        }
 }
 
-void Dataset::load(std::vector<const char*> filenames, int size)
+void Dataset::load(std::vector<const char *> filenames, int size)
 {
     resize(size * filenames.size());
-    
-    char *dat = (char*)data();
-    const uint64 dataSetSize = size*sizeof(DataElem);
 
-    for(auto &filename : filenames)
+    char *dat = (char *)data();
+    const uint64 dataSetSize = size * sizeof(DataElem);
+
+    for (auto &filename : filenames)
     {
         std::fstream file(filename, std::ios::in | std::ios::binary);
 
+        if (!file.good())
+        {
+            if (!file.is_open())
+                std::cerr << "Error : Dataset::load(std::vector<const char*>), could not open file " << filename << "\n";
+            else
+                std::cerr << "Error : Dataset::load(std::vector<const char*>), error while opening file " << filename << "\n";
+            exit(EXIT_FAILURE);
+        }
+
         file.read(dat, dataSetSize);
-        
+
         dat += dataSetSize;
         file.close();
     }
@@ -37,58 +45,57 @@ void Dataset::load(std::vector<const char*> filenames, int size)
 
 void Dataset::load(const Image &img)
 {
-    if(img.size.x%SUB_IMAGE_ROW || img.size.y%SUB_IMAGE_ROW)
+    if (img.size.x % SUB_IMAGE_ROW || img.size.y % SUB_IMAGE_ROW)
     {
         std::cerr << "Error : Dataset::load(Image), this image size is not a multiple of " << SUB_IMAGE_ROW << "\n";
         exit(EXIT_FAILURE);
     }
 
-    imgSize = ivec2(img.size.x/SUB_IMAGE_ROW, img.size.y/SUB_IMAGE_ROW);
+    imgSize = ivec2(img.size.x / SUB_IMAGE_ROW, img.size.y / SUB_IMAGE_ROW);
 
-    resize(imgSize.x*imgSize.y);
+    resize(imgSize.x * imgSize.y);
 
     int id = 0;
-    for(int i = 0; i < imgSize.x; i++)
-    for(int j = 0; j < imgSize.y; j++, id++)
-    {
-        DataElem &e = at(id);
-        for(int x = 0; x < 32; x++)
-        for(int y = 0; y < 32; y++)
+    for (int i = 0; i < imgSize.x; i++)
+        for (int j = 0; j < imgSize.y; j++, id++)
         {
-            pixel p = img(i*32 + x, j*32 + y);
-            e.r.array[y][x] = p.r;
-            e.g.array[y][x] = p.g;
-            e.b.array[y][x] = p.b;
+            DataElem &e = at(id);
+            for (int x = 0; x < 32; x++)
+                for (int y = 0; y < 32; y++)
+                {
+                    pixel p = img(i * 32 + x, j * 32 + y);
+                    e.r.array[y][x] = p.r;
+                    e.g.array[y][x] = p.g;
+                    e.b.array[y][x] = p.b;
+                }
         }
-    }
 }
 
 ImageRef Dataset::toImage()
 {
     ImageRef out(new Image);
 
-    out->alloc(imgSize*SUB_IMAGE_ROW);
+    out->alloc(imgSize * SUB_IMAGE_ROW);
 
     int id = 0;
-    for(int i = 0; i < imgSize.x; i++)
-    for(int j = 0; j < imgSize.y; j++, id++)
-        at(id).toImage(*out, ivec2(i, j));
-    
+    for (int i = 0; i < imgSize.x; i++)
+        for (int j = 0; j < imgSize.y; j++, id++)
+            at(id).toImage(*out, ivec2(i, j));
+
     return out;
 }
 
 void Dataset::convertSpace(std::function<pixel(pixel)> f)
 {
-    
 }
 
 #include <immintrin.h>
 
-uint32 operator-(const subImageChannel & __restrict__ a, const subImageChannel & __restrict__ b)
+uint32 operator-(const subImageChannel &__restrict__ a, const subImageChannel &__restrict__ b)
 {
     uint32 r = 0;
-    for(int i = 0; i < SUB_IMAGE_SIZE; i++)
-        r += a.data[i] < b.data[i] ? b.data[i]-a.data[i] : a.data[i]-b.data[i];
+    for (int i = 0; i < SUB_IMAGE_SIZE; i++)
+        r += a.data[i] < b.data[i] ? b.data[i] - a.data[i] : a.data[i] - b.data[i];
 
     // __m256i vecr = _mm256_set1_epi8(0);
 

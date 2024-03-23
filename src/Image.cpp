@@ -1,17 +1,18 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
-#include <stb/stb_image_resize.h>
+#include <stb/stb_image_resize2.h>
 
 #include "Dataset.hpp"
 
 Image::~Image()
 {
-    if(pixels) delete [] pixels;
+    if (pixels)
+        delete[] pixels;
 }
 
 void Image::load(const char *filename)
 {
-    pixels = (pixel*)stbi_load(filename, &size.x, &size.y, nullptr, 3);
+    pixels = (pixel *)stbi_load(filename, &size.x, &size.y, nullptr, 3);
 }
 
 void Image::save(const char *filename)
@@ -25,16 +26,16 @@ void Image::alloc(ivec2 size)
     pixels = new pixel[size.x * size.y];
 }
 
-Image& Image::resizeForMinSubImageRes(const int n)
+Image &Image::resizeForMinSubImageRes(const int n)
 {
     pixel *oldPixels = pixels;
     ivec2 oldSize = size;
 
-    vec2 tmp = vec2(size)/(float)size.x; 
-    alloc(ivec2(round(tmp*(float)n))*SUB_IMAGE_ROW);
+    vec2 tmp = vec2(size) / (float)size.x;
+    alloc(ivec2(round(tmp * (float)n)) * SUB_IMAGE_ROW);
 
-    stbir_resize_uint8((const uint8*)oldPixels, oldSize.x, oldSize.y, 0, (uint8*)pixels, size.x, size.y, 0, 3);
+    stbir_resize_uint8_linear((const uint8 *)oldPixels, oldSize.x, oldSize.y, 0, (uint8 *)pixels, size.x, size.y, 0, STBIR_RGB);
 
-    delete [] oldPixels;
+    delete[] oldPixels;
     return *this;
 }
