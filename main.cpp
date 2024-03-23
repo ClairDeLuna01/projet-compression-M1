@@ -62,6 +62,8 @@ int main(int argc, const char *argv[])
         {
             "data/in/dataSets/part1.CIFAR-10",
             "data/in/dataSets/part2.CIFAR-10",
+            "data/in/dataSets/part1.CIFAR-100",
+            "data/in/dataSets/part2.CIFAR-100",
         };
 
     int res = 0;
