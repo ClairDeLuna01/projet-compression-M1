@@ -37,7 +37,9 @@ std::string composeOutputName(
     const char* technique
 )
 {
-    std::string name = "data/out/" + (getNameOnlyFromPath(inputName)) + "_" + technique;
+    // const std::string baseFolder = "data/ColorSpaceComp/";
+    const std::string baseFolder = "data/out/";
+    std::string name = baseFolder + (getNameOnlyFromPath(inputName)) + "_" + technique;
     name += "_" + std::to_string(scalex) + "x" + std::to_string(scaley) + "_" + std::to_string(datSize/1000) + "K.png";
     return name;
 }

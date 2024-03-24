@@ -43,9 +43,10 @@ class MosaicGenerator
                         
                         float sdisty = abs((*history)[j].y - imgPos.y);
                         float sdistx = abs((*history)[j].x - imgPos.x);
-                        float sdist = sqrt(sdistx*sdistx + sdisty*sdisty);
+                        float sdist = distance(vec2((*history)[j].x, (*history)[j].y), vec2(imgPos));
                         
                         if(sdist <= 25.f || sdistx <= 1.f || sdisty <= 1.f)
+                        // if(sdistx <= 2+rand()%4 || sdisty <= 2+rand()%4)
                         {
                             (*historyMutex)[j].unlock();
                             continue;
