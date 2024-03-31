@@ -28,6 +28,7 @@ class Image
         const pixel& operator ()(int i, int j) const {return pixels[i + j*size.x];};
 
         Image& resizeForMinSubImageRes(const int n);
+        Image& resize(const ivec2 res);
 };
 
 typedef std::shared_ptr<Image> ImageRef;

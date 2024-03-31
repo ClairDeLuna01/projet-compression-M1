@@ -22,26 +22,44 @@ class subImageChannel
         };
 };
 
-class subImageQuarterChannel
+class LF1_subImageChannel
 {
     public :
+        union
+        {
+            float array[SUB_IMAGE_ROW/2][SUB_IMAGE_ROW/2];
+            float data[SUB_IMAGE_SIZE/4];
+        };  
+};
 
+class LF2_subImageChannel
+{
+    public :
         union
         {
             float array[SUB_IMAGE_ROW/4][SUB_IMAGE_ROW/4];
             float data[SUB_IMAGE_SIZE/16];
-        };
+        };  
+};
+
+class LF3_subImageChannel
+{
+    public :
+        union
+        {
+            float array[SUB_IMAGE_ROW/8][SUB_IMAGE_ROW/8];
+            float data[SUB_IMAGE_SIZE/64];
+        };  
 };
 
 
 uint32 operator-(const subImageChannel & __restrict__ a, const subImageChannel & __restrict__ b);
 
 typedef glm::vec<3, subImageChannel, glm::packed_highp> subImage;
-// typedef glm::vec<3, subImageQuarterChannel, glm::packed_highp> subImageQuarter;
-struct subImageQuarter
-{
-    subImageQuarterChannel rgb[3];
-};
+
+struct LF1_subImage{LF1_subImageChannel rgb[3];};
+struct LF2_subImage{LF2_subImageChannel rgb[3];};
+struct LF3_subImage{LF3_subImageChannel rgb[3];};
 
 struct DataElem : subImage
 {
