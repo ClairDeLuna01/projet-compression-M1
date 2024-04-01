@@ -49,9 +49,9 @@ all: main gui
 
 clean:
 ifeq  ($(OS),Windows_NT)
-	$(RM) obj\*.o $(EXE).exe
+	$(RM) obj\*.o $(EXE).exe $(EXE_GUI).exe deps\*.d
 else
-	$(RM) obj/*.o $(EXE)
+	$(RM) obj/*.o $(EXE) $(EXE_GUI) deps/*.d
 endif
 
 reinstall: clean main
