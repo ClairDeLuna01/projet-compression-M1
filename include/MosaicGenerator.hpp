@@ -8,6 +8,12 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include "Dataset.hpp"
+#include "shmUtils.hpp"
+
+// dirty but it will do for now
+// somehow removing this works on windows but not on linux
+// it makes no sense that the program can compile without this
+extern bool subprocess;
 
 #define SubImageScoringFunction std::function<T(subImage &a, subImage &b, int aid, int bid, const T &scoreClosest)>
 
@@ -100,14 +106,21 @@ private:
             progress++;
             if (progress % 50 == 0)
             {
-                // print progress bar
-                std::cout << "\r[";
-                for (int i = 0; i < 50; i++)
+                if (subprocess)
                 {
-                    std::cout << (i < (progress - 1) * 50 / iSize ? "=" : (i == progress * 50 / iSize ? ">" : " "));
+                    sharedMemory mem = {true, progress, iSize};
+                    writeSharedMemory(mem);
                 }
+                else
+                {
+                    std::cout << "\r[";
+                    for (int i = 0; i < 50; i++)
+                    {
+                        std::cout << (i < (progress - 1) * 50 / iSize ? "=" : (i == progress * 50 / iSize ? ">" : " "));
+                    }
 
-                std::cout << "] " << progress * 100 / iSize << "%" << std::flush;
+                    std::cout << "] " << progress * 100 / iSize << "%" << std::flush;
+                }
             }
             progressBarMutex->unlock();
 
@@ -181,7 +194,8 @@ public:
         for (int i = 0; i < threadNB; i++)
             t[i].join();
 
-        std::cout << "\r[==================================================] 100%\n";
+        if (!subprocess)
+            std::cout << "\r[==================================================] 100%\n";
 
 #ifdef DO_REPETITION_REDUCTION
         const int dsize = dat->size();
@@ -217,7 +231,8 @@ public:
 
                 img->at(i) = dat->at(p[bestID].first);
             }
-        std::cout << maxtmp << "\n";
+        if (!subprocess)
+            std::cout << maxtmp << "\n";
 #else
         for (int i = 0; i < size; i++)
             img->at(i) = dat->at(bestCandidates[i][0].first);

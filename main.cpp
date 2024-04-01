@@ -44,9 +44,12 @@ int main(int argc, const char *argv[])
 
     if (argc <= 4)
     {
-        std::cout << "Usage: " << argv[0] << " <inputFile> <res> <colorSpace> <technique> [OUT_FILE]\n";
+        std::cout << "Usage: " << argv[0] << " <inputFile> <res> <colorSpace> <technique> [OUT_FILE] [--subprocess]\n";
         std::cout << "\tTechniques:  L1DIFF, L2DIFF, L3DIFF\n";
         std::cout << "\tColorSpaces: RGB, HSL, HWB, LRGB, XYZD50, LAB, LCH, XYZD65, OKLAB, OKLCH, SRGB, DISPLAYP3, A98RGB, PROPHOTORGB, REC2020\n";
+        std::cout << "Optional arguments:\n";
+        std::cout << "\tOUT_FILE: Output file name\n";
+        std::cout << "\t--subprocess: Run in silent mode, writes data to a shared memory buffer\n";
         return EXIT_FAILURE;
     }
 
@@ -62,6 +65,25 @@ int main(int argc, const char *argv[])
     {
         outfile = argv[5];
     }
+
+    if (argc > 6)
+    {
+        if (!strcmp(argv[6], "--subprocess"))
+            subprocess = true;
+        else
+            subprocess = false;
+    }
+    else
+        subprocess = false;
+
+    if (subprocess)
+        initializeSharedMemory();
+
+    sharedMemory mem;
+    mem.status = true;
+    mem.progress = 0;
+    mem.total = 100;
+    writeSharedMemory(mem);
 
     std::vector<const char *> dataFiles =
         {
@@ -101,7 +123,8 @@ int main(int argc, const char *argv[])
     }
     auto end = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Time: " << ((double)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) / 1000.0f << "s\n";
+    if (!subprocess)
+        std::cout << "Time: " << ((double)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) / 1000.0f << "s\n";
 
     // std::string technique = "LLFDIFF_AVGPOND_RGB";
 
@@ -121,6 +144,9 @@ int main(int argc, const char *argv[])
                                 inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
                                 .c_str());
 
-    std::cout << "Done!\n";
+    if (!subprocess)
+        std::cout << "Done!\n";
+    else
+        writeSharedMemory({false, 100, 100});
     return EXIT_SUCCESS;
 }

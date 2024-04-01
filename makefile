@@ -1,5 +1,5 @@
 
-default: main
+default: all
 
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
@@ -15,9 +15,14 @@ DEPFLAGS_BASE = -MT $@ -MMD -MP -MF $(DEPDIR)
 DEPFLAGS = $(DEPFLAGS_BASE)/$*.d
 DEPFLAGSMAIN = $(DEPFLAGS_BASE)/main.d
 
-CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized
+ifeq ($(OS),Windows_NT)
+	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -lmingw32
+else
+	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized
+endif
 
 EXE = mosaic
+EXE_GUI = mosaic_gui
 
 ifeq ($(OS),Windows_NT)
 	RM = del /s /f /q
@@ -36,6 +41,11 @@ obj/main.o: main.cpp
 
 main: $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
+
+gui: $(OBJCPP) $(OBJC)
+	g++ GUImain.cpp -o $(EXE_GUI) $(CFLAGS)
+
+all: main gui
 
 clean:
 ifeq  ($(OS),Windows_NT)

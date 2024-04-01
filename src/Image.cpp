@@ -1,6 +1,7 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 #include <stb/stb_image_resize2.h>
+#include <iostream>
 
 #include "Dataset.hpp"
 
@@ -17,7 +18,11 @@ void Image::load(const char *filename)
 
 void Image::save(const char *filename)
 {
-    stbi_write_png(filename, size.x, size.y, 3, pixels, 0);
+    int ret = stbi_write_png(filename, size.x, size.y, 3, pixels, 0);
+    if (!ret)
+    {
+        std::cerr << "Error saving image" << std::endl;
+    }
 }
 
 void Image::alloc(ivec2 size)
