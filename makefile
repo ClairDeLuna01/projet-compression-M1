@@ -16,9 +16,11 @@ DEPFLAGS = $(DEPFLAGS_BASE)/$*.d
 DEPFLAGSMAIN = $(DEPFLAGS_BASE)/main.d
 
 ifeq ($(OS),Windows_NT)
-	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -lmingw32
+	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-function
+	FLTKFLAGS = -lfltk -lm -lgdi32 -lole32 -lfltk -lcomctl32 -luuid -lws2_32 
 else
-	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized
+	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-function
+	FLTKFLAGS = -lfltk -lm -lX11 -lXext -lXft 
 endif
 
 EXE = mosaic
@@ -39,19 +41,19 @@ obj/%.o: src/%.c
 obj/main.o: main.cpp
 	g++ -c $(DEPFLAGS_BASE) $(DEPFLAGSMAIN) main.cpp -o obj/main.o $(CFLAGS)
 
-main: $(OBJCPP) $(OBJC)
+$(EXE): $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
 
-gui: $(OBJCPP) $(OBJC)
-	g++ GUImain.cpp -o $(EXE_GUI) $(CFLAGS)
+$(EXE_GUI): $(OBJCPP) $(OBJC)
+	g++ GUImain.cpp obj/STB_IMPLEMENTATION.o -o $(EXE_GUI) $(CFLAGS) $(FLTKFLAGS)
 
-all: main gui
+all: $(EXE) $(EXE_GUI)
 
 clean:
 ifeq  ($(OS),Windows_NT)
-	$(RM) obj\*.o $(EXE).exe $(EXE_GUI).exe deps\*.d
+	$(RM) obj\*.o $(EXE).exe $(EXE_GUI).exe $(DEPDIR)\*.d
 else
-	$(RM) obj/*.o $(EXE) $(EXE_GUI) deps/*.d
+	$(RM) obj/*.o $(EXE) $(EXE_GUI) $(DEPDIR)/*.d
 endif
 
 reinstall: clean main
@@ -65,6 +67,8 @@ $(DEPFILES):
 
 
 include $(wildcard $(DEPFILES))
+
+.PHONY: clean reinstall all
 
 CStestFox32 :
 	.\mosaic.exe .\data\in\RedFox.png 32 RGB
