@@ -44,7 +44,7 @@ int main(int argc, const char *argv[])
 
     if (argc <= 4)
     {
-        std::cout << "Usage: " << argv[0] << " <inputFile> <res> <colorSpace> <technique>\n";
+        std::cout << "Usage: " << argv[0] << " <inputFile> <res> <colorSpace> <technique> [OUT_FILE]\n";
         std::cout << "\tTechniques:  L1DIFF, L2DIFF, L3DIFF\n";
         std::cout << "\tColorSpaces: RGB, HSL, HWB, LRGB, XYZD50, LAB, LCH, XYZD65, OKLAB, OKLCH, SRGB, DISPLAYP3, A98RGB, PROPHOTORGB, REC2020\n";
         return EXIT_FAILURE;
@@ -56,6 +56,12 @@ int main(int argc, const char *argv[])
     sscanf(argv[2], "%d", &res);
     strcpy(colorSpace, argv[3]);
     const char *techniqueName = argv[4];
+
+    std::string outfile;
+    if (argc > 4)
+    {
+        outfile = argv[5];
+    }
 
     std::vector<const char *> dataFiles =
         {
@@ -108,9 +114,12 @@ int main(int argc, const char *argv[])
     technique += "_REPRED";
 #endif
 
-    img.toImage()->save(composeOutputName(
-                            inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
-                            .c_str());
+    if (outfile.size())
+        img.toImage()->save(outfile.c_str());
+    else
+        img.toImage()->save(composeOutputName(
+                                inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
+                                .c_str());
 
     std::cout << "Done!\n";
     return EXIT_SUCCESS;
