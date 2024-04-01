@@ -10,7 +10,12 @@ OBJCPP += obj/main.o
 SOURCESC := $(call rwildcard,src,*.c)
 OBJC := $(SOURCESC:src/%.c=obj/%.o)
 
-CFLAGS = -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized
+DEPDIR := .deps
+DEPFLAGS_BASE = -MT $@ -MMD -MP -MF $(DEPDIR)
+DEPFLAGS = $(DEPFLAGS_BASE)/$*.d
+DEPFLAGSMAIN = $(DEPFLAGS_BASE)/main.d
+
+CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized
 
 EXE = mosaic
 
@@ -21,13 +26,13 @@ else
 endif
 
 obj/%.o: src/%.cpp
-	g++ -c src/$*.cpp -o obj/$*.o $(CFLAGS)
+	g++ -c $(DEPFLAGS_BASE) $(DEPFLAGS) src/$*.cpp -o obj/$*.o $(CFLAGS)
 
 obj/%.o: src/%.c
-	g++ -c src/$*.c -o obj/$*.o $(CFLAGS)
+	g++ -c $(DEPFLAGS_BASE) $(DEPFLAGS) src/$*.c -o obj/$*.o $(CFLAGS)
 
 obj/main.o: main.cpp
-	g++ -c main.cpp -o obj/main.o $(CFLAGS)
+	g++ -c $(DEPFLAGS_BASE) $(DEPFLAGSMAIN) main.cpp -o obj/main.o $(CFLAGS)
 
 main: $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
@@ -40,6 +45,16 @@ else
 endif
 
 reinstall: clean main
+
+$(DEPDIR): ; @mkdir $@
+
+DEPFILES := $(SOURCES:$(SDIR)/%.cpp=$(DEPDIR)/%.d)
+DEPFILES += $(DEPDIR)/main.d
+# $(info $(DEPFILES))
+$(DEPFILES):
+
+
+include $(wildcard $(DEPFILES))
 
 CStestFox32 :
 	.\mosaic.exe .\data\in\RedFox.png 32 RGB

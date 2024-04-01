@@ -9,15 +9,6 @@ using namespace glm;
 
 class Image;
 
-template <int N>
-double pixelSampleMean(const Image &img, int i, int j);
-
-template <int N>
-double pixelSampleVariance(const Image &img, int i, int j, double mean);
-
-template <int N>
-double pixelSampleCovariance(const Image &img1, const Image &img2, int i, int j, double mean1, double mean2);
-
 class Image
 {
 private:
@@ -37,57 +28,7 @@ public:
     const pixel &operator()(int i, int j) const { return pixels[i + j * size.x]; };
 
     Image &resizeForMinSubImageRes(const int n);
-
-    template <int N = 8>
-    static double SSIM(const Image &img1, const Image &img2)
-    {
-        constexpr double k1 = 0.01;
-        constexpr double k2 = 0.03;
-        constexpr double L = 255;
-
-        constexpr double c1 = (k1 * L) * (k1 * L);
-        constexpr double c2 = (k2 * L) * (k2 * L);
-
-        double mean1, mean2;
-        double variance1, variance2;
-        double covariance;
-
-        double ssim = 0;
-
-        for (int i = 0; i < img1.size.x; i += N)
-        {
-            for (int j = 0; j < img1.size.y; j += N)
-            {
-                mean1 = pixelSampleMean<N>(img1, i, j);
-                mean2 = pixelSampleMean<N>(img2, i, j);
-
-                variance1 = pixelSampleVariance<N>(img1, i, j, mean1);
-                variance2 = pixelSampleVariance<N>(img2, i, j, mean2);
-
-                covariance = pixelSampleCovariance<N>(img1, img2, i, j, mean1, mean2);
-
-                ssim += (2 * mean1 * mean2 + c1) * (2 * covariance + c2) / ((mean1 * mean1 + mean2 * mean2 + c1) * (variance1 + variance2 + c2));
-            }
-        }
-
-        return ssim / (img1.size.x * img1.size.y / (N * N));
-    }
-
-    static double PSNR(const Image &img1, const Image &img2)
-    {
-        double mse = 0;
-        for (int i = 0; i < img1.size.x; i++)
-        {
-            for (int j = 0; j < img1.size.y; j++)
-            {
-                mse += (img1(i, j).r - img2(i, j).r) * (img1(i, j).r - img2(i, j).r);
-                mse += (img1(i, j).g - img2(i, j).g) * (img1(i, j).g - img2(i, j).g);
-                mse += (img1(i, j).b - img2(i, j).b) * (img1(i, j).b - img2(i, j).b);
-            }
-        }
-        mse /= img1.size.x * img1.size.y * 3;
-        return 10 * log10(255 * 255 / mse);
-    }
+    Image &resize(const ivec2 res);
 };
 
 typedef std::shared_ptr<Image> ImageRef;
@@ -132,4 +73,39 @@ double pixelSampleCovariance(const Image &img1, const Image &img2, int i, int j,
         }
     }
     return sum / (N * N * 3);
+}
+
+template <int N = 8>
+double ComputeSSIM(const Image &img1, const Image &img2)
+{
+    constexpr double k1 = 0.01;
+    constexpr double k2 = 0.03;
+    constexpr double L = 255;
+
+    constexpr double c1 = (k1 * L) * (k1 * L);
+    constexpr double c2 = (k2 * L) * (k2 * L);
+
+    double mean1, mean2;
+    double variance1, variance2;
+    double covariance;
+
+    double ssim = 0;
+
+    for (int i = 0; i < img1.size.x; i += N)
+    {
+        for (int j = 0; j < img1.size.y; j += N)
+        {
+            mean1 = pixelSampleMean<N>(img1, i, j);
+            mean2 = pixelSampleMean<N>(img2, i, j);
+
+            variance1 = pixelSampleVariance<N>(img1, i, j, mean1);
+            variance2 = pixelSampleVariance<N>(img2, i, j, mean2);
+
+            covariance = pixelSampleCovariance<N>(img1, img2, i, j, mean1, mean2);
+
+            ssim += (2 * mean1 * mean2 + c1) * (2 * covariance + c2) / ((mean1 * mean1 + mean2 * mean2 + c1) * (variance1 + variance2 + c2));
+        }
+    }
+
+    return ssim / (img1.size.x * img1.size.y / (N * N));
 }
