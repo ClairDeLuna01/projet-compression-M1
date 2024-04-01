@@ -14,6 +14,12 @@ CFLAGS = -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninit
 
 EXE = mosaic
 
+ifeq ($(OS),Windows_NT)
+	RM = del /s /f /q
+else
+	RM = rm -f
+endif
+
 obj/%.o: src/%.cpp
 	g++ -c src/$*.cpp -o obj/$*.o $(CFLAGS)
 
@@ -27,7 +33,11 @@ main: $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
 
 clean:
-	rm -f obj/*.o main
+ifeq  ($(OS),Windows_NT)
+	$(RM) obj\*.o $(EXE).exe
+else
+	$(RM) obj/*.o $(EXE)
+endif
 
 reinstall: clean main
 

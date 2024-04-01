@@ -3,7 +3,7 @@
 
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
-#include <stb/stb_image_resize.h>
+#include <stb/stb_image_resize2.h>
 
 #include <colorm.h>
 
@@ -36,97 +36,100 @@ char colorSpace[256];
 
 convertedColor getConvertedColor(float r, float g, float b)
 {
-    if(!strcmp(colorSpace, "RGB"))
+    if (!strcmp(colorSpace, "RGB"))
     {
-        colorm::Rgb res(r,g,b);
-        return *(convertedColor*)&res;
+        colorm::Rgb res(r, g, b);
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "HSL"))
+    if (!strcmp(colorSpace, "HSL"))
     {
-        colorm::Hsl res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Hsl res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "HWB"))
-    { 
-        colorm::Hwb res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+    if (!strcmp(colorSpace, "HWB"))
+    {
+        colorm::Hwb res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "LRGB"))
+    if (!strcmp(colorSpace, "LRGB"))
     {
-        colorm::Lrgb res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Lrgb res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "XYZD50"))
+    if (!strcmp(colorSpace, "XYZD50"))
     {
-        colorm::XyzD50 res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::XyzD50 res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "LAB"))
+    if (!strcmp(colorSpace, "LAB"))
     {
-        colorm::Lab res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Lab res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "LCH"))
+    if (!strcmp(colorSpace, "LCH"))
     {
-        colorm::Lch res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
-    }
-    
-    if(!strcmp(colorSpace, "XYZD65"))
-    {
-        colorm::XyzD65 res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Lch res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "OKLAB"))
+    if (!strcmp(colorSpace, "XYZD65"))
     {
-        colorm::Oklab res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::XyzD65 res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "OKLCH"))
+    if (!strcmp(colorSpace, "OKLAB"))
     {
-        colorm::Oklch res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Oklab res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "SRGB"))
+    if (!strcmp(colorSpace, "OKLCH"))
     {
-        colorm::Srgb res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Oklch res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "DISPLAYP3"))
+    if (!strcmp(colorSpace, "SRGB"))
     {
-        colorm::DisplayP3 res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::Srgb res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "A98RGB"))
+    if (!strcmp(colorSpace, "DISPLAYP3"))
     {
-        colorm::A98Rgb res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::DisplayP3 res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "PROPHOTORGB"))
+    if (!strcmp(colorSpace, "A98RGB"))
     {
-        colorm::ProphotoRgb res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::A98Rgb res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    if(!strcmp(colorSpace, "REC2020"))
+    if (!strcmp(colorSpace, "PROPHOTORGB"))
     {
-        colorm::Rec2020 res(colorm::Rgb(r,g,b));
-        return *(convertedColor*)&res;
+        colorm::ProphotoRgb res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
     }
 
-    return {0., 0., 0., 0.};
+    if (!strcmp(colorSpace, "REC2020"))
+    {
+        colorm::Rec2020 res(colorm::Rgb(r, g, b));
+        return *(convertedColor *)&res;
+    }
+
+    std::cerr << "Unknown color space: " << colorSpace << std::endl;
+    std::cerr << "Options are: RGB, HSL, HWB, LRGB, XYZD50, LAB, LCH, XYZD65, OKLAB, OKLCH, SRGB, DISPLAYP3, A98RGB, PROPHOTORGB, REC2020\n";
+    std::cerr << "Exiting...\n";
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, const char *argv[])
@@ -163,7 +166,6 @@ int main(int argc, const char *argv[])
     const char *inputFile = argv[1];
 
     strcpy(colorSpace, argv[3]);
-
 
     std::vector<const char *> dataFiles =
         {
@@ -218,7 +220,7 @@ int main(int argc, const char *argv[])
                     float D = (float)e[c].array[i + 1][j + 1];
 
                     // wave.rgb[c].array[i/2][j/2] = (A+B+C+D);
-                    array[c][i / 2][j / 2] = (A + B + C + D)/4.f;
+                    array[c][i / 2][j / 2] = (A + B + C + D) / 4.f;
                 }
 
         for (int c = 0; c < 3; c++)
@@ -229,14 +231,14 @@ int main(int argc, const char *argv[])
                     float B = array[c][i + 1][j];
                     float C = array[c][i][j + 1];
                     float D = array[c][i + 1][j + 1];
-                    wave.rgb[c].array[i / 2][j / 2] = (A + B + C + D)/4.f;
+                    wave.rgb[c].array[i / 2][j / 2] = (A + B + C + D) / 4.f;
                 }
 
-        for (int i = 0; i < SUB_IMAGE_ROW / 4; i ++)
-            for (int j = 0; j < SUB_IMAGE_ROW / 4; j ++)
+        for (int i = 0; i < SUB_IMAGE_ROW / 4; i++)
+            for (int j = 0; j < SUB_IMAGE_ROW / 4; j++)
             {
                 convertedColor conv = getConvertedColor(wave.rgb[0].array[i][j], wave.rgb[1].array[i][j], wave.rgb[2].array[i][j]);
-                
+
                 wave.rgb[0].array[i][j] = conv.c[0];
                 wave.rgb[1].array[i][j] = conv.c[1];
                 wave.rgb[2].array[i][j] = conv.c[2];
@@ -287,7 +289,7 @@ int main(int argc, const char *argv[])
             _mm256_storeu_ps(tmp, _res);
             score[c] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
         }
-   
+
         // score *= vec3(0.3, 0.6, 0.1) + iAvg[aid]/128.f;
         // score *= vec3(0.3, 0.6, 0.1);
 
@@ -296,7 +298,7 @@ int main(int argc, const char *argv[])
 
     // std::string technique = "LLFDIFF_AVGPOND_RGB";
     std::string technique = "LLFDIFF_";
-    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 1); 
+    MosaicGenerator::mosaic(&img, &dat, spec, 1e6f, 8);
 
     // std::string technique = "DIFF_RGB";
     // MosaicGenerator::mosaic(&img, &dat, diff, (int)1e6 , 4);
@@ -307,9 +309,16 @@ int main(int argc, const char *argv[])
     technique += "_REPRED";
 #endif
 
-    img.toImage()->save(composeOutputName(
-                            inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
-                            .c_str());
+    ImageRef imgRef = img.toImage();
+    imgRef->save(composeOutputName(
+                     inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
+                     .c_str());
+
+    double ssim = Image::SSIM<8>(input, *imgRef);
+    std::cout << "SSIM: " << ssim << std::endl;
+
+    double psnr = Image::PSNR(input, *imgRef);
+    std::cout << "PSNR: " << psnr << std::endl;
 
     std::cout << "Done!\n";
     return EXIT_SUCCESS;
