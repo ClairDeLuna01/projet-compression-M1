@@ -61,7 +61,7 @@ int main(int argc, const char *argv[])
     const char *techniqueName = argv[4];
 
     std::string outfile;
-    if (argc > 4)
+    if (argc > 5)
     {
         outfile = argv[5];
     }
@@ -83,7 +83,8 @@ int main(int argc, const char *argv[])
     mem.status = true;
     mem.progress = 0;
     mem.total = 100;
-    writeSharedMemory(mem);
+    if (subprocess)
+        writeSharedMemory(mem);
 
     std::vector<const char *> dataFiles =
         {
@@ -140,9 +141,11 @@ int main(int argc, const char *argv[])
     if (outfile.size())
         img.toImage()->save(outfile.c_str());
     else
+    {
         img.toImage()->save(composeOutputName(
                                 inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
                                 .c_str());
+    }
 
     if (!subprocess)
         std::cout << "Done!\n";
