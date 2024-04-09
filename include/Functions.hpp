@@ -48,3 +48,4 @@ extern std::function<int(subImage &, subImage &, int, int, const int &)> DIFF;
 extern std::function<float(subImage &, subImage &, int, int, const float &)> L1DIFF;
 extern std::function<float(subImage &, subImage &, int, int, const float &)> L2DIFF;
 extern std::function<float(subImage &, subImage &, int, int, const float &)> L3DIFF;
+extern std::function<float(subImage &, subImage &, int, int, const float &)> AVG;

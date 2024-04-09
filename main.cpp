@@ -45,7 +45,7 @@ int main(int argc, const char *argv[])
     if (argc <= 4)
     {
         std::cout << "Usage: " << argv[0] << " <inputFile> <res> <colorSpace> <technique> [OUT_FILE] [--subprocess]\n";
-        std::cout << "\tTechniques:  L1DIFF, L2DIFF, L3DIFF\n";
+        std::cout << "\tTechniques: DIFF, L1DIFF, L2DIFF, L3DIFF, AVG\n";
         std::cout << "\tColorSpaces: RGB, HSL, HWB, LRGB, XYZD50, LAB, LCH, XYZD65, OKLAB, OKLCH, SRGB, DISPLAYP3, A98RGB, PROPHOTORGB, REC2020\n";
         std::cout << "Optional arguments:\n";
         std::cout << "\tOUT_FILE: Output file name\n";
@@ -122,6 +122,17 @@ int main(int argc, const char *argv[])
         iL3F.compute(img, L3FF);
         MosaicGenerator::mosaic(&img, &dat, L3DIFF, 1e6f, 16);
     }
+    if (!strcmp(techniqueName, "DIFF"))
+    {
+        MosaicGenerator::mosaic(&img, &dat, DIFF, 1000000, 16);
+    }
+    if (!strcmp(techniqueName, "AVG"))
+    {
+        dAvg.compute(dat, avgF);
+        iAvg.compute(img, avgF);
+        MosaicGenerator::mosaic(&img, &dat, AVG, 1e6f, 16);
+    }
+
     auto end = std::chrono::high_resolution_clock::now();
 
     if (!subprocess)

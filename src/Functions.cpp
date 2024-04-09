@@ -101,7 +101,7 @@ convertedColor getConvertedColor(float r, float g, float b)
 /****** Defining dataset atributes ******/
 std::function<vec3(const DataElem &)> avgF = [](const DataElem &e)
 {
-    vec3 avg;
+    vec3 avg(0);
     for (int i = 0; i < SUB_IMAGE_ROW; i++)
         for (int j = 0; j < SUB_IMAGE_ROW; j++)
         {
@@ -110,6 +110,12 @@ std::function<vec3(const DataElem &)> avgF = [](const DataElem &e)
         }
 
     avg /= SUB_IMAGE_SIZE;
+
+    convertedColor conv = getConvertedColor(avg.r, avg.g, avg.b);
+    avg.r = conv.c[0];
+    avg.g = conv.c[1];
+    avg.b = conv.c[2];
+
     return avg;
 };
 
@@ -341,5 +347,13 @@ std::function<float(subImage &, subImage &, int, int, const float &)> L3DIFF =
         score[c] = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
     }
 
+    return score.r + score.g + score.b;
+};
+
+std::function<float(subImage &, subImage &, int, int, const float &)> AVG =
+    [](subImage &a, subImage &b, int aid, int bid, const float &scoreClosest) -> float
+{
+
+    vec3 score = abs(iAvg[aid] - dAvg[bid]);
     return score.r + score.g + score.b;
 };

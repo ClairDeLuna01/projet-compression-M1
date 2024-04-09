@@ -191,9 +191,11 @@ int main()
     colorSpace->add("REC2020");
 
     Fl_Choice *technique = new Fl_Choice(WIDTH - 20 - 100, 310, 100, 40, "Technique");
+    technique->add("DIFF");
     technique->add("L1DIFF");
     technique->add("L2DIFF");
     technique->add("L3DIFF");
+    technique->add("AVG");
 
     Fl_Button *generateButton = new Fl_Button(WIDTH - 20 - 100, 380, 100, 40, "Generate");
 
