@@ -108,7 +108,7 @@ private:
             {
                 if (subprocess)
                 {
-                    sharedMemory mem = {true, progress, iSize};
+                    sharedMemory mem = {true, false, progress, iSize};
                     writeSharedMemory(mem);
                 }
                 else
@@ -196,6 +196,11 @@ public:
 
         if (!subprocess)
             std::cout << "\r[==================================================] 100%\n";
+        else
+        {
+            sharedMemory mem = {true, false, size, size};
+            writeSharedMemory(mem);
+        }
 
 #ifdef DO_REPETITION_REDUCTION
         const int dsize = dat->size();

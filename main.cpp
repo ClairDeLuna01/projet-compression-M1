@@ -82,6 +82,7 @@ int main(int argc, const char *argv[])
     sharedMemory mem;
     mem.status = true;
     mem.progress = 0;
+    mem.writing = false;
     mem.total = 100;
     if (subprocess)
         writeSharedMemory(mem);
@@ -134,6 +135,12 @@ int main(int argc, const char *argv[])
     }
 
     auto end = std::chrono::high_resolution_clock::now();
+    mem.status = true;
+    mem.progress = 100;
+    mem.writing = true;
+    mem.total = 100;
+    if (subprocess)
+        writeSharedMemory(mem);
 
     if (!subprocess)
         std::cout << "Time: " << ((double)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()) / 1000.0f << "s\n";
@@ -157,10 +164,10 @@ int main(int argc, const char *argv[])
                                 inputFile, img.getImgSize().x, img.getImgSize().y, dat.size(), technique.c_str())
                                 .c_str());
     }
-
+    // std::cout << "h" << std::endl;
     if (!subprocess)
         std::cout << "Done!\n";
     else
-        writeSharedMemory({false, 100, 100});
+        writeSharedMemory({false, false, 100, 100});
     return EXIT_SUCCESS;
 }

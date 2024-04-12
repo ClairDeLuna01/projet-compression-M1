@@ -18,6 +18,8 @@ using namespace std;
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Image.H>
 #include <FL/Fl_Shared_Image.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Text_Display.H>
 
 #include "stb/stb_image.h"
 // #include "stb_image_write.h"
@@ -102,13 +104,22 @@ public:
         image = nullptr;
     }
 
-    void setImage(Fl_RGB_Image *image)
+    void setImage(Fl_RGB_Image *image, int w = 0, int h = 0)
     {
+        if (w == 0)
+        {
+            w = this->w();
+        }
+        if (h == 0)
+        {
+            h = this->h();
+        }
         if (this->image)
         {
             delete this->image;
         }
-        this->image = image;
+        this->image = (Fl_RGB_Image *)image->copy(w, h);
+        resize(x(), y(), w, h);
         redraw();
     }
 
@@ -135,6 +146,9 @@ int main()
     constexpr int WIDTH = 1024;
     constexpr int HEIGHT = 768;
     Fl_Window *window = new Fl_Window(WIDTH, HEIGHT, "Mosaic Generator");
+
+    int lastProgress = 0;
+    auto lastTime = std::chrono::high_resolution_clock::now();
 
     // choose a file through a file chooser
     Fl_File_Chooser *chooser = new Fl_File_Chooser(".", "*", Fl_File_Chooser::SINGLE, "Choose an image");
@@ -199,6 +213,21 @@ int main()
 
     Fl_Button *generateButton = new Fl_Button(WIDTH - 20 - 100, 380, 100, 40, "Generate");
 
+    Fl_Progress *progress = new Fl_Progress(20, HEIGHT - 40 - 20, WIDTH - 40, 20);
+    progress->minimum(0);
+    progress->maximum(100);
+    progress->value(0);
+    progress->hide();
+    progress->selection_color(FL_BLUE);
+    progress->color(FL_WHITE);
+
+    Fl_Box *ErrorDisplay = new Fl_Box(WIDTH / 2 - 100, HEIGHT - 50, 200, 50, "Error: Timeout, CLI program most likely crashed.");
+    ErrorDisplay->hide();
+    ErrorDisplay->labelcolor(FL_RED);
+    ErrorDisplay->box(FL_NO_BOX);
+    ErrorDisplay->align(FL_ALIGN_INSIDE | FL_ALIGN_CENTER);
+    ErrorDisplay->labelsize(20);
+
     Fl::visual(FL_RGB);
     window->end();
     window->show();
@@ -241,24 +270,27 @@ int main()
                 int w = wMax;
                 int h = hMax;
 
-                if (width > wMax || height > hMax)
+                if (width > height)
                 {
-                    if (width > height)
-                    {
-                        w = wMax;
-                        h = wMax / aspect;
-                    }
-                    else
-                    {
-                        h = hMax;
-                        w = hMax * aspect;
-                    }
+                    w = wMax;
+                    h = wMax / aspect;
+                }
+                else
+                {
+                    h = hMax;
+                    w = hMax * aspect;
                 }
 
                 Fl_RGB_Image *imageBase = new Fl_RGB_Image(data, width, height, 3);
                 Fl_RGB_Image *image = (Fl_RGB_Image *)imageBase->copy(w, h);
-                fileLabel->setImage(image);
-
+                fileLabel->setImage(image, w, h);
+                // std::cout << "w: " << w << " h: " << h << " aspect: " << aspect << "\n";
+                progress->selection_color(FL_BLUE);
+                progress->value(0);
+                progress->maximum(100);
+                progress->hide();
+                ErrorDisplay->hide();
+                window->redraw();
                 // delete[] data;
             }
         }
@@ -281,23 +313,52 @@ int main()
             args.clear();
             generateButton->value(0);
             generating = true;
+            lastTime = std::chrono::high_resolution_clock::now();
+            progress->show();
+            progress->selection_color(FL_BLUE);
+            ErrorDisplay->hide();
         }
 
         if (generating)
         {
             readSharedMemory(mem);
+            progress->value(mem.progress);
+            progress->maximum(mem.total > 0 ? mem.total : 100);
             if (mem.status)
             {
-                if (mem.total == 0)
+                auto now = std::chrono::high_resolution_clock::now();
+                const float timeOut = 3.0f;
+                if (mem.progress == lastProgress)
                 {
-                    std::cout << "Progress: 0/0\r" << std::flush;
+                    if (std::chrono::duration_cast<std::chrono::duration<float>>(now - lastTime).count() > timeOut && !mem.writing)
+                    {
+                        generating = false;
+                        std::cout << "                                         \r" << std::flush;
+                        std::cout << "Error: Timeout\n";
+                        progress->selection_color(FL_RED);
+                        progress->value(1);
+                        progress->maximum(1);
+                        ErrorDisplay->show();
+                        continue;
+                    }
                 }
                 else
-                    std::cout << "Progress: " << mem.progress << "/" << mem.total << "\r" << std::flush;
+                {
+                    lastProgress = mem.progress;
+                    lastTime = now;
+                }
+
+                // if (mem.total == 0)
+                // {
+                //     std::cout << "Progress: 0/0\r" << std::flush;
+                // }
+                // else
+                //     std::cout << "Progress: " << mem.progress << "/" << mem.total << "\r" << std::flush;
             }
             else
             {
                 generating = false;
+                progress->hide();
                 std::cout << "                                         \r" << std::flush;
 
                 int width, height, channels;
@@ -310,23 +371,21 @@ int main()
                     int w = wMax;
                     int h = hMax;
 
-                    if (width > wMax || height > hMax)
+                    if (width > height)
                     {
-                        if (width > height)
-                        {
-                            w = wMax;
-                            h = wMax / aspect;
-                        }
-                        else
-                        {
-                            h = hMax;
-                            w = hMax * aspect;
-                        }
+                        w = wMax;
+                        h = wMax / aspect;
+                    }
+                    else
+                    {
+                        h = hMax;
+                        w = hMax * aspect;
                     }
 
                     Fl_RGB_Image *imageBase = new Fl_RGB_Image(data, width, height, 3);
                     Fl_RGB_Image *image = (Fl_RGB_Image *)imageBase->copy(w, h);
-                    fileLabel->setImage(image);
+                    fileLabel->setImage(image, w, h);
+                    window->redraw();
                 }
             }
         }

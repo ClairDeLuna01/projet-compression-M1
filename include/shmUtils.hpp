@@ -3,6 +3,7 @@
 struct sharedMemory
 {
     bool status;
+    bool writing;
     int progress;
     int total;
 };
