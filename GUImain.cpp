@@ -247,6 +247,8 @@ int main()
 
     std::vector<std::string> args;
 
+    float timeOut = 10.0f;
+
     bool generating = false;
     while (true)
     {
@@ -319,6 +321,27 @@ int main()
             args.push_back("tmp.png");
             args.push_back("--subprocess");
 
+            if (technique->text() == std::string("DIFF"))
+            {
+                timeOut = 10.0f;
+            }
+            else if (technique->text() == std::string("L1DIFF"))
+            {
+                timeOut = 20.0f;
+            }
+            else if (technique->text() == std::string("L2DIFF"))
+            {
+                timeOut = 20.0f;
+            }
+            else if (technique->text() == std::string("L3DIFF"))
+            {
+                timeOut = 5.0f;
+            }
+            else if (technique->text() == std::string("AVG"))
+            {
+                timeOut = 5.0f;
+            }
+
             mem.status = true;
             mem.progress = 0;
             mem.total = 100;
@@ -343,7 +366,7 @@ int main()
             if (mem.status)
             {
                 auto now = std::chrono::high_resolution_clock::now();
-                const float timeOut = 10.0f;
+
                 if (mem.progress == lastProgress)
                 {
                     if (std::chrono::duration_cast<std::chrono::duration<float>>(now - lastTime).count() > timeOut &&
