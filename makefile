@@ -16,8 +16,8 @@ DEPFLAGS = $(DEPFLAGS_BASE)/$*.d
 DEPFLAGSMAIN = $(DEPFLAGS_BASE)/main.d
 
 ifeq ($(OS),Windows_NT)
-	CFLAGS = -g -O0 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-function
-	FLTKFLAGS = -lfltk -lm -lgdi32 -lole32 -lfltk -lcomctl32 -luuid -lws2_32 
+	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-function
+	FLTKFLAGS = -lfltk -lm -lgdi32 -lole32 -lfltk -lcomctl32 -luuid -lws2_32 -lcomdlg32
 else
 	CFLAGS = -g -O3 -Wall -Iinclude -mavx -mavx2 -Wno-strict-aliasing -Wno-maybe-uninitialized -Wno-array-bounds -Wno-unused-function
 	FLTKFLAGS = -lfltk -lm -lX11 -lXext -lXft 
@@ -41,10 +41,11 @@ obj/%.o: src/%.c
 obj/main.o: main.cpp
 	g++ -c $(DEPFLAGS_BASE) $(DEPFLAGSMAIN) main.cpp -o obj/main.o $(CFLAGS)
 
+
 $(EXE): $(OBJCPP) $(OBJC)
 	g++ $(OBJCPP) $(OBJC) -o $(EXE) $(CFLAGS)
 
-$(EXE_GUI): $(OBJCPP) $(OBJC)
+$(EXE_GUI): GUImain.cpp obj/STB_IMPLEMENTATION.o
 	g++ GUImain.cpp obj/STB_IMPLEMENTATION.o -o $(EXE_GUI) $(CFLAGS) $(FLTKFLAGS)
 
 all: $(EXE) $(EXE_GUI)

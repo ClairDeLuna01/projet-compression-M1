@@ -1,25 +1,26 @@
 #define SHM_UTILS_IMPLEMENTATION
 #include "shmUtils.hpp"
-#include <vector>
+#include <iostream>
+#include <signal.h>
 #include <string>
 #include <thread>
-#include <signal.h>
-#include <iostream>
+#include <vector>
 
 #include <glm/glm.hpp>
 using namespace std;
 
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
-#include <FL/Fl_Input.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Image.H>
-#include <FL/Fl_Shared_Image.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Native_File_Chooser.H>
 #include <FL/Fl_Progress.H>
+#include <FL/Fl_Shared_Image.H>
 #include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Window.H>
 
 #include "stb/stb_image.h"
 // #include "stb_image_write.h"
@@ -64,8 +65,8 @@ int createChild(std::vector<std::string> &args)
 }
 
 #else
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 std::string mainName = "./mosaic";
 int createChild(std::vector<std::string> &args)
@@ -95,10 +96,10 @@ int createChild(std::vector<std::string> &args)
 
 class ImageBox : public Fl_Box
 {
-private:
+  private:
     Fl_RGB_Image *image;
 
-public:
+  public:
     ImageBox(int x, int y, int w, int h, const char *label = 0) : Fl_Box(x, y, w, h, label)
     {
         image = nullptr;
@@ -151,7 +152,18 @@ int main()
     auto lastTime = std::chrono::high_resolution_clock::now();
 
     // choose a file through a file chooser
-    Fl_File_Chooser *chooser = new Fl_File_Chooser(".", "*", Fl_File_Chooser::SINGLE, "Choose an image");
+    // Fl_File_Chooser *chooser =
+    //     new Fl_File_Chooser("data/in", "Image (*.{png,jpg,jpeg,bmp})", Fl_File_Chooser::SINGLE, "Choose an image");
+
+    Fl_Native_File_Chooser *chooser = new Fl_Native_File_Chooser();
+    chooser->title("Choose an image");
+    chooser->type(Fl_Native_File_Chooser::BROWSE_FILE);
+    chooser->filter("Image\t*.{png,jpg,jpeg,bmp}");
+#ifdef _WIN32
+    chooser->directory("data\\in");
+#else
+    chooser->directory("data/in");
+#endif
     Fl_Button *fileButton = new Fl_Button(WIDTH - 20 - 100, 100, 100, 40, "Choose file");
     const int wMax = WIDTH - 260;
     const int hMax = HEIGHT - 120;
@@ -221,7 +233,8 @@ int main()
     progress->selection_color(FL_BLUE);
     progress->color(FL_WHITE);
 
-    Fl_Box *ErrorDisplay = new Fl_Box(WIDTH / 2 - 100, HEIGHT - 50, 200, 50, "Error: Timeout, CLI program most likely crashed.");
+    Fl_Box *ErrorDisplay =
+        new Fl_Box(WIDTH / 2 - 100, HEIGHT - 50, 200, 50, "Error: Timeout, CLI program most likely crashed.");
     ErrorDisplay->hide();
     ErrorDisplay->labelcolor(FL_RED);
     ErrorDisplay->box(FL_NO_BOX);
@@ -238,24 +251,26 @@ int main()
     while (true)
     {
         Fl::wait(0.05);
-        if (
-            (Fl::event() == FL_SHORTCUT && Fl::event_key() == FL_Escape) ||
-            (Fl::event() == FL_CLOSE))
+        if ((Fl::event() == FL_SHORTCUT && Fl::event_key() == FL_Escape) || (Fl::event() == FL_CLOSE))
         {
             break;
         }
         if (fileButton->value())
         {
-            chooser->show();
-            while (chooser->visible())
-            {
-                Fl::wait();
-            }
-            if (chooser->value() == 0)
+            int rslt = chooser->show();
+            if (rslt != 0)
             {
                 continue;
             }
-            filename = chooser->value();
+            // while (chooser->visible())
+            // {
+            //     Fl::wait();
+            // }
+            // if (chooser->value() == 0)
+            // {
+            //     continue;
+            // }
+            filename = chooser->filename();
             fileLabel->copy_label(filename.c_str());
             fileButton->value(0);
 
@@ -317,6 +332,7 @@ int main()
             progress->show();
             progress->selection_color(FL_BLUE);
             ErrorDisplay->hide();
+            window->redraw();
         }
 
         if (generating)
@@ -327,10 +343,11 @@ int main()
             if (mem.status)
             {
                 auto now = std::chrono::high_resolution_clock::now();
-                const float timeOut = 3.0f;
+                const float timeOut = 10.0f;
                 if (mem.progress == lastProgress)
                 {
-                    if (std::chrono::duration_cast<std::chrono::duration<float>>(now - lastTime).count() > timeOut && !mem.writing)
+                    if (std::chrono::duration_cast<std::chrono::duration<float>>(now - lastTime).count() > timeOut &&
+                        !mem.writing)
                     {
                         generating = false;
                         std::cout << "                                         \r" << std::flush;
@@ -339,6 +356,7 @@ int main()
                         progress->value(1);
                         progress->maximum(1);
                         ErrorDisplay->show();
+                        window->redraw();
                         continue;
                     }
                 }
